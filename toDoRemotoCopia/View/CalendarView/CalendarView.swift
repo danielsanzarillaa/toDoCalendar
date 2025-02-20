@@ -59,9 +59,17 @@ struct CalendarView: View {
     }
     
     private var tasksForSelectedDate: [ToDoTaskItem] {
-        presenter.tasks.filter { task in
+        let filteredTasks = presenter.tasks.filter { task in
             guard let taskDate = task.taskDate else { return false }
             return Calendar.current.isDate(taskDate, inSameDayAs: selectedDate)
+        }
+        
+        // Aplicamos el mismo criterio de ordenamiento que en la vista principal
+        return filteredTasks.sorted { task1, task2 in
+            if task1.isCompleted != task2.isCompleted {
+                return !task1.isCompleted
+            }
+            return task1.priority.rawValue > task2.priority.rawValue
         }
     }
     
