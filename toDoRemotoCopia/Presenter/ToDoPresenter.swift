@@ -89,4 +89,39 @@ class ToDoPresenter: ObservableObject {
     private func saveTasks() {
         repository.saveTasks(tasks)
     }
+    
+    // Movido desde la Vista
+    func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "es_ES")
+        
+        if Calendar.current.isDate(date, equalTo: Date(), toGranularity: .year) {
+            formatter.dateFormat = "EEEE, d 'de' MMMM"
+        } else {
+            formatter.dateFormat = "EEEE, d 'de' MMMM 'de' yyyy"
+        }
+        
+        return formatter.string(from: date).capitalized
+    }
+    
+    // Movido desde la Vista
+    var todayTasks: [ToDoTaskItem] {
+        sortedTasks.filter { task in
+            guard let taskDate = task.taskDate else { return false }
+            return Calendar.current.isDateInToday(taskDate)
+        }
+    }
+    
+    // Movido desde la Vista
+    var groupedFutureTasks: [Date: [ToDoTaskItem]] {
+        let nonTodayTasks = sortedTasks.filter { task in
+            guard let taskDate = task.taskDate else { return false }
+            let startOfToday = Calendar.current.startOfDay(for: Date())
+            return !Calendar.current.isDateInToday(taskDate) && taskDate >= startOfToday
+        }
+        
+        return Dictionary(grouping: nonTodayTasks) { task in
+            Calendar.current.startOfDay(for: task.taskDate ?? Date())
+        }
+    }
 }

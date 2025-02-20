@@ -7,18 +7,18 @@ struct ToDoView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            if todayTasks.isEmpty && groupedFutureTasks.isEmpty {
+            if presenter.todayTasks.isEmpty && presenter.groupedFutureTasks.isEmpty {
                 EmptyStateView(presenter: presenter)
             } else {
                 List {
-                    if !todayTasks.isEmpty {
+                    if !presenter.todayTasks.isEmpty {
                         Section(
                             header: Text("Tareas de Hoy")
                                 .font(.headline)
                                 .foregroundColor(.primary)
                                 .padding(.top, 8)
                         ) {
-                            ForEach(todayTasks) { task in
+                            ForEach(presenter.todayTasks) { task in
                                 TaskRow(task: task, isEditing: editMode == .active)
                                     .onTapGesture {
                                         if editMode == .active {
@@ -30,16 +30,16 @@ struct ToDoView: View {
                             }
                             .onDelete { indexSet in
                                 for index in indexSet {
-                                    presenter.deleteTask(id: todayTasks[index].id)
+                                    presenter.deleteTask(id: presenter.todayTasks[index].id)
                                 }
                             }
                         }
                     }
                     
-                    ForEach(groupedFutureTasks.keys.sorted(), id: \.self) { date in
-                        if let tasks = groupedFutureTasks[date] {
+                    ForEach(presenter.groupedFutureTasks.keys.sorted(), id: \.self) { date in
+                        if let tasks = presenter.groupedFutureTasks[date] {
                             Section(
-                                header: Text(formatDate(date))
+                                header: Text(presenter.formatDate(date))
                                     .font(.headline)
                                     .foregroundColor(.primary)
                                     .padding(.top, 8)
@@ -72,7 +72,7 @@ struct ToDoView: View {
         .navigationTitle("Mis Tareas")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                if !todayTasks.isEmpty || !groupedFutureTasks.isEmpty {
+                if !presenter.todayTasks.isEmpty || !presenter.groupedFutureTasks.isEmpty {
                     Button(action: { editMode = editMode == .active ? .inactive : .active }) {
                         Text(editMode == .active ? "Hecho" : "Editar")
                             .fontWeight(.medium)
@@ -82,38 +82,6 @@ struct ToDoView: View {
         }
         .sheet(item: $taskToEdit) { task in
             EditTaskView(task: task, presenter: presenter)
-        }
-    }
-    
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es_ES")
-        
-        if Calendar.current.isDate(date, equalTo: Date(), toGranularity: .year) {
-            formatter.dateFormat = "EEEE, d 'de' MMMM"
-        } else {
-            formatter.dateFormat = "EEEE, d 'de' MMMM 'de' yyyy"
-        }
-        
-        return formatter.string(from: date).capitalized
-    }
-    
-    private var todayTasks: [ToDoTaskItem] {
-        presenter.sortedTasks.filter { task in
-            guard let taskDate = task.taskDate else { return false }
-            return Calendar.current.isDateInToday(taskDate)
-        }
-    }
-    
-    private var groupedFutureTasks: [Date: [ToDoTaskItem]] {
-        let nonTodayTasks = presenter.sortedTasks.filter { task in
-            guard let taskDate = task.taskDate else { return false }
-            let startOfToday = Calendar.current.startOfDay(for: Date())
-            return !Calendar.current.isDateInToday(taskDate) && taskDate >= startOfToday
-        }
-        
-        return Dictionary(grouping: nonTodayTasks) { task in
-            Calendar.current.startOfDay(for: task.taskDate ?? Date())
         }
     }
 }
