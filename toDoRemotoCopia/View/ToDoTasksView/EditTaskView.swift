@@ -91,7 +91,7 @@ struct EditTaskView: View {
                             newTitle: title,
                             newDescription: description,
                             newPriority: priority,
-                            newtaskDate: taskDate,
+                            newTaskDate: taskDate,
                             newReminderDate: reminderDate,
                             newRecurrence: recurrence
                         )

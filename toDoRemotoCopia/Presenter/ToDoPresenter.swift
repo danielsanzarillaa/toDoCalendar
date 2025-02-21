@@ -46,33 +46,55 @@ class ToDoPresenter: ObservableObject {
         newTitle: String? = nil,
         newDescription: String? = nil,
         newPriority: TaskPriority? = nil,
-        newtaskDate: Date? = nil,
+        newTaskDate: Date? = nil,
         newReminderDate: Date? = nil,
         newRecurrence: TaskRecurrence? = nil
     ) {
         if let index = tasks.firstIndex(where: { $0.id == id }) {
-            // Cancelar notificación existente
             NotificationService.shared.cancelNotification(for: id)
             
             var updatedTask = tasks[index]
             if let newTitle = newTitle { updatedTask.title = newTitle }
             if let newDescription = newDescription { updatedTask.description = newDescription }
             if let newPriority = newPriority { updatedTask.priority = newPriority }
-            updatedTask.taskDate = newtaskDate ?? updatedTask.taskDate
+            updatedTask.taskDate = newTaskDate ?? updatedTask.taskDate
             updatedTask.reminderDate = newReminderDate
             updatedTask.recurrence = newRecurrence
             tasks[index] = updatedTask
             saveTasks()
             
-            // Programar nueva notificación si es necesario
             if newReminderDate != nil {
                 NotificationService.shared.scheduleNotification(for: updatedTask)
             }
         }
     }
     
-    var sortedTasks: [ToDoTaskItem] {
-        tasks.sorted { task1, task2 in
+    // ✅ Restaurado `todayTasks`
+    var todayTasks: [ToDoTaskItem] {
+        tasks.filter { task in
+            guard let taskDate = task.taskDate else { return false }
+            return Calendar.current.isDateInToday(taskDate)
+        }
+    }
+    
+    // ✅ Restaurado `groupedFutureTasks`
+    var groupedFutureTasks: [Date: [ToDoTaskItem]] {
+        let futureTasks = tasks.filter { task in
+            guard let taskDate = task.taskDate else { return false }
+            return taskDate > Date() && !Calendar.current.isDateInToday(taskDate)
+        }
+        
+        return Dictionary(grouping: futureTasks) { task in
+            Calendar.current.startOfDay(for: task.taskDate ?? Date())
+        }
+    }
+    
+    func tasks(for date: Date) -> [ToDoTaskItem] {
+        tasks.filter { task in
+            guard let taskDate = task.taskDate else { return false }
+            return Calendar.current.isDate(taskDate, inSameDayAs: date)
+        }
+        .sorted { task1, task2 in
             if task1.isCompleted != task2.isCompleted {
                 return !task1.isCompleted
             }
@@ -80,17 +102,6 @@ class ToDoPresenter: ObservableObject {
         }
     }
     
-    var tasksByDate: [Date: [ToDoTaskItem]] {
-        Dictionary(grouping: tasks) { task in
-            Calendar.current.startOfDay(for: task.taskDate ?? Date())
-        }
-    }
-    
-    private func saveTasks() {
-        repository.saveTasks(tasks)
-    }
-    
-    // Movido desde la Vista
     func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "es_ES")
@@ -103,25 +114,8 @@ class ToDoPresenter: ObservableObject {
         
         return formatter.string(from: date).capitalized
     }
-    
-    // Movido desde la Vista
-    var todayTasks: [ToDoTaskItem] {
-        sortedTasks.filter { task in
-            guard let taskDate = task.taskDate else { return false }
-            return Calendar.current.isDateInToday(taskDate)
-        }
-    }
-    
-    // Movido desde la Vista
-    var groupedFutureTasks: [Date: [ToDoTaskItem]] {
-        let nonTodayTasks = sortedTasks.filter { task in
-            guard let taskDate = task.taskDate else { return false }
-            let startOfToday = Calendar.current.startOfDay(for: Date())
-            return !Calendar.current.isDateInToday(taskDate) && taskDate >= startOfToday
-        }
-        
-        return Dictionary(grouping: nonTodayTasks) { task in
-            Calendar.current.startOfDay(for: task.taskDate ?? Date())
-        }
+
+    private func saveTasks() {
+        repository.saveTasks(tasks)
     }
 }
