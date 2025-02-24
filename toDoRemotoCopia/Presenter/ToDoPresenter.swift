@@ -69,15 +69,14 @@ class ToDoPresenter: ObservableObject {
         }
     }
     
-    // ✅ Restaurado `todayTasks`
     var todayTasks: [ToDoTaskItem] {
-        tasks.filter { task in
-            guard let taskDate = task.taskDate else { return false }
-            return Calendar.current.isDateInToday(taskDate)
-        }
-    }
+           tasks.filter { task in
+               guard let taskDate = task.taskDate else { return false }
+               return Calendar.current.isDateInToday(taskDate)
+           }
+           .sorted { $0.priority.rawValue > $1.priority.rawValue }
+       }
     
-    // ✅ Restaurado `groupedFutureTasks`
     var groupedFutureTasks: [Date: [ToDoTaskItem]] {
         let futureTasks = tasks.filter { task in
             guard let taskDate = task.taskDate else { return false }
