@@ -15,8 +15,6 @@ struct CalendarView: View {
             )
             .datePickerStyle(.graphical)
             .padding()
-            
-            // Texto que indica el día seleccionado
             Text("Tareas para el \(presenter.formatDate(selectedDate))")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
@@ -25,13 +23,16 @@ struct CalendarView: View {
             List {
                 ForEach(presenter.tasks(for: selectedDate)) { task in
                     TaskRow(task: task, isEditing: false)
+                        .onTapGesture {
+                            presenter.toggleTaskCompleted(id: task.id)
+                        }
                         .contextMenu {
                             Button(action: {
                                 taskToEdit = task
                             }) {
                                 Label("Editar", systemImage: "pencil")
                             }
-                            
+
                             Button(role: .destructive, action: {
                                 presenter.deleteTask(id: task.id)
                             }) {
@@ -46,6 +47,7 @@ struct CalendarView: View {
                     }
                 }
             }
+
             
             Button(action: { showingTaskSheet = true }) {
                 Label("Añadir tarea para esta fecha", systemImage: "plus.circle.fill")
