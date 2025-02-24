@@ -82,11 +82,16 @@ class ToDoPresenter: ObservableObject {
             guard let taskDate = task.taskDate else { return false }
             return taskDate > Date() && !Calendar.current.isDateInToday(taskDate)
         }
-        
-        return Dictionary(grouping: futureTasks) { task in
+        var groupedTasks = Dictionary(grouping: futureTasks) { task in
             Calendar.current.startOfDay(for: task.taskDate ?? Date())
         }
+        for (key, value) in groupedTasks {
+            groupedTasks[key] = value.sorted { $0.priority.rawValue > $1.priority.rawValue }
+        }
+        
+        return groupedTasks
     }
+
     
     func tasks(for date: Date) -> [ToDoTaskItem] {
         tasks.filter { task in
