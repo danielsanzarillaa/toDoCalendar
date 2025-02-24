@@ -28,6 +28,8 @@
 				Model/TaskPriority.swift,
 				Model/ToDoLocal.swift,
 				Model/ToDoTaskItem.swift,
+				Presenter/NotificationPresenter.swift,
+				Presenter/ToDoPresenter.swift,
 			);
 			target = F75AD6102D672679006D96FA /* toDoRemotoCopiaTestss */;
 		};
